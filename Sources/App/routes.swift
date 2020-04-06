@@ -13,9 +13,10 @@ public func routes(_ router: Router) throws {
     }
     
     // Validate Email
-    router.get("validate", String.parameter) { request -> String in
+    router.get("validate", String.parameter) { request -> [String : String] in
         let email = try request.parameters.next(String.self)
-        var error = ""
+        var error = "Nothing Wrong With Email!"
+        var status = "true"
         // Check Email
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
@@ -23,9 +24,22 @@ public func routes(_ router: Router) throws {
         // Error Message
         if !valid {
             error = "Email format is not valid"
+            status = "false"
         }
         
-        return "Error Response: \(error)"
+        return ["Error" : error]
+    }
+    
+    router.post("welcome", String.parameter, String.parameter) { request -> PostModel in
+        let name = try request.parameters.next(String.self)
+        let surname = try request.parameters.next(String.self)
+        let greet = "Welcome \(name) \(surname)"
+        let pm = PostModel.init(name: name, surname: surname, greet: greet)
+        return pm
+    }
+    
+    router.post(PostModelBody.self, at:"user") { request, user -> PostModelBody in
+        return user
     }
 
     // Example of configuring a controller

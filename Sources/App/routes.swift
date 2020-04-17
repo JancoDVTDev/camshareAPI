@@ -12,6 +12,25 @@ public func routes(_ router: Router) throws {
         return "Hello, world!"
     }
     
+    //TipsAndTricks
+    router.get("tipsandtricks") { request -> [String: [TipsAndTricksModel]] in
+        var repo = TipsAndTricksRepo()
+        let tipsAndTricksContent = repo.populateDictionaries()
+        return ["tips": tipsAndTricksContent]
+    }
+    
+    router.post(TipsAndTricksModel.self, at: "tipsandtricks/updatestatustried") { request, model -> TipsAndTricksModel in
+        let tipsAndTricksController = TipsAndTricsController()
+        let newModel = tipsAndTricksController.changeStatusTried(model: model)
+        return newModel
+    }
+    
+    router.post(TipsAndTricksModel.self, at: "tipsandtricks/updatestatusnew") { request, model -> TipsAndTricksModel in
+        let tipsAndTricksController = TipsAndTricsController()
+        let newModel = tipsAndTricksController.changeStatusNew(model: model)
+        return newModel
+    }
+    
     // Validate Email
     router.get("validate", String.parameter) { request -> [String : String] in
         let email = try request.parameters.next(String.self)

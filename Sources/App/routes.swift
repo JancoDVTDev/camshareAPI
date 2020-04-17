@@ -32,22 +32,22 @@ public func routes(_ router: Router) throws {
     }
     
     // Validate Email
-    router.get("validate", String.parameter) { request -> [String : String] in
-        let email = try request.parameters.next(String.self)
-        var error = "Nothing Wrong With Email!"
-        var status = "true"
-        // Check Email
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
-        let valid = emailPredicate.evaluate(with: email)
-        // Error Message
-        if !valid {
-            error = "Email format is not valid"
-            status = "false"
-        }
-        
-        return ["Error" : error]
-    }
+//    router.get("validate", String.parameter) { request -> [String : String] in
+//        let email = try request.parameters.next(String.self)
+//        var error = "Nothing Wrong With Email!"
+//        var status = "true"
+//        // Check Email
+//        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+//        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+//        let valid = emailPredicate.evaluate(with: email)
+//        // Error Message
+//        if !valid {
+//            error = "Email format is not valid"
+//            status = "false"
+//        }
+//        
+//        return ["Error" : error]
+//    }
     
     router.post("welcome", String.parameter, String.parameter) { request -> PostModel in
         let name = try request.parameters.next(String.self)

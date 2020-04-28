@@ -4,12 +4,7 @@ import Vapor
 public func routes(_ router: Router) throws {
     // Basic "It works" example
     router.get { req in
-        return "It works!"
-    }
-    
-    // Basic "Hello, world!" example
-    router.get("hello") { req in
-        return "Hello, world!"
+        return "camSHARE API"
     }
     
     //TipsAndTricks
@@ -19,46 +14,96 @@ public func routes(_ router: Router) throws {
         return ["tips": tipsAndTricksContent]
     }
     
-    router.post(TipsAndTricksModel.self, at: "tipsandtricks/updatestatustried") { request, model -> TipsAndTricksModel in
-        let tipsAndTricksController = TipsAndTricsController()
-        let newModel = tipsAndTricksController.changeStatusTried(model: model)
-        return newModel
+    router.post(NewRating.self, at: "rating") { _, newRating -> Ratings in
+        let ratingID = newRating.ratingID
+        let rating = newRating.rating
+        
+        let ratings = updateRatings(currentRatingID: ratingID, newRating: rating)
+        let ratingsFormatted: [String: [RatingsModel]] = ["ratings": ratings!.ratings]
+        saveDataToFile(ratings: ratingsFormatted)
+        
+        return ratings!
     }
     
-    router.post(TipsAndTricksModel.self, at: "tipsandtricks/updatestatusnew") { request, model -> TipsAndTricksModel in
-        let tipsAndTricksController = TipsAndTricsController()
-        let newModel = tipsAndTricksController.changeStatusNew(model: model)
-        return newModel
+    func updateRatings(currentRatingID: Int, newRating: Int) -> Ratings? {
+        let ratings = getAllRatings()
+
+        var veryBadNumberOfRatings: Int
+        var badNumberOfRatings: Int
+        var okayNumberOfRatings: Int
+        var goodNumberOfRatings: Int
+        var veryGoodNumberOfRatings: Int
+        var overallRating: Int
+        
+        var newRatings: Ratings = Ratings(ratings: [])
+        
+        if let ratings = ratings {
+            for rating in ratings.ratings {
+                if rating.ratingID == currentRatingID {
+                    veryBadNumberOfRatings = rating.veryBadNumberOfRatings
+                    badNumberOfRatings = rating.badNumberOfRatings
+                    okayNumberOfRatings = rating.okayNumberOfRatings
+                    goodNumberOfRatings = rating.goodNumberOfRatings
+                    veryGoodNumberOfRatings = rating.veryGoodNumberOfRatings
+
+                    switch newRating {
+                    case 1:
+                        veryBadNumberOfRatings += 1
+                    case 2:
+                        badNumberOfRatings += 1
+                    case 3:
+                        okayNumberOfRatings += 1
+                    case 4:
+                        goodNumberOfRatings += 1
+                    default:
+                        veryGoodNumberOfRatings += 1
+                    }
+                    
+                    let ratingNumbers = [veryBadNumberOfRatings, badNumberOfRatings, okayNumberOfRatings, goodNumberOfRatings, veryGoodNumberOfRatings]
+                    let highest = ratingNumbers.max()
+                    let highestIndex = ratingNumbers.index(of: highest!)
+                    overallRating = highestIndex! + 1
+                    let newRatingModel = RatingsModel(ratingID: currentRatingID, lastRating: newRating, veryBadNumberOfRatings: veryBadNumberOfRatings, badNumberOfRatings: badNumberOfRatings, okayNumberOfRatings: okayNumberOfRatings, goodNumberOfRatings: goodNumberOfRatings, veryGoodNumberOfRatings: veryGoodNumberOfRatings, overallRating: overallRating)
+                    newRatings.ratings.append(newRatingModel)
+                } else {
+                    newRatings.ratings.append(rating)
+                }
+            }
+        }
+        print(newRatings.ratings)
+        return newRatings
     }
     
-    // Validate Email
-//    router.get("validate", String.parameter) { request -> [String : String] in
-//        let email = try request.parameters.next(String.self)
-//        var error = "Nothing Wrong With Email!"
-//        var status = "true"
-//        // Check Email
-//        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-//        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
-//        let valid = emailPredicate.evaluate(with: email)
-//        // Error Message
-//        if !valid {
-//            error = "Email format is not valid"
-//            status = "false"
-//        }
-//        
-//        return ["Error" : error]
-//    }
-    
-    router.post("welcome", String.parameter, String.parameter) { request -> PostModel in
-        let name = try request.parameters.next(String.self)
-        let surname = try request.parameters.next(String.self)
-        let greet = "Welcome \(name) \(surname)"
-        let pm = PostModel.init(name: name, surname: surname, greet: greet)
-        return pm
+    func getAllRatings() -> Ratings? {
+        var ratings: Ratings = Ratings(ratings: [])
+        let directory = DirectoryConfig.detect()
+        let destinationDirectory = "Sources/App/Models"
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: directory.workDir)
+                .appendingPathComponent(destinationDirectory, isDirectory: true)
+                .appendingPathComponent("Ratings.json", isDirectory: false))
+            let allRatings = try JSONDecoder().decode(Ratings.self, from: data)
+            ratings = allRatings
+        } catch {
+            return nil
+        }
+        return ratings
     }
     
-    router.post(PostModelBody.self, at:"user") { request, user -> PostModelBody in
-        return user
+    func saveDataToFile(ratings: [String: [RatingsModel]]) {
+        let directory = DirectoryConfig.detect()
+        let destinationDirectory = "Sources/App/Models"
+        let encoder = JSONEncoder()
+        if let jsonData = try? encoder.encode(ratings) {
+            do {
+                let filePath = URL(fileURLWithPath: directory.workDir)
+                    .appendingPathComponent(destinationDirectory, isDirectory: true)
+                    .appendingPathComponent("Ratings.json", isDirectory: false)
+                try jsonData.write(to: filePath)
+            } catch {
+                print(error)
+            }
+        }
     }
 
     // Example of configuring a controller
